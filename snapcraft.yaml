@@ -1,0 +1,160 @@
+name: snes9x-gtk
+base: core24
+version: '1.63'
+platforms:
+  amd64:
+    build-on: [amd64]
+    build-for: [amd64]
+  arm64:
+    build-on: [arm64]
+    build-for: [arm64]
+summary: A Super Nintendo emulator
+description: |
+  Snes9x is a portable, freeware Super Nintendo Entertainment System (SNES) emulator.
+  It basically allows you to play most games designed for the SNES and Super Famicom Nintendo game systems on your PC or Workstation; which includes some real gems that were only ever released in Japan.
+grade: stable
+confinement: strict
+compression: lzo
+
+apps:
+  snes9x-gtk:
+    command-chain:
+      - snap/command-chain/gpu-2404-wrapper
+      - snap/command-chain/desktop-launch
+    command: usr/bin/snes9x-gtk
+    desktop: usr/share/applications/snes9x-gtk.desktop
+    common-id: com.snes9x.Snes9x
+    environment:
+      SNAP_DESKTOP_RUNTIME: $SNAP/gnome-platform
+      GTK_USE_PORTAL: "1"
+    plugs:
+      - desktop
+      - desktop-legacy
+      - gsettings
+      - opengl
+      - wayland
+      - x11
+      - unity7
+      - screen-inhibit-control
+      - audio-playback
+      - network
+      - network-bind
+      - home
+      - removable-media
+      - mount-observe
+      - joystick
+      - bluez
+
+plugs:
+  shared-memory:
+    private: true
+  desktop:
+      mount-host-font-cache: false
+  gtk-3-themes:
+      interface: content
+      target: $SNAP/data-dir/themes
+      default-provider: gtk-common-themes
+  icon-themes:
+      interface: content
+      target: $SNAP/data-dir/icons
+      default-provider: gtk-common-themes
+  sound-themes:
+      interface: content
+      target: $SNAP/data-dir/sounds
+      default-provider: gtk-common-themes
+  gnome-46-2404:
+      interface: content
+      target: $SNAP/gnome-platform
+      default-provider: gnome-46-2404
+  gpu-2404:
+      interface: content
+      target: $SNAP/gpu-2404
+      default-provider: mesa-2404
+
+layout:
+  /usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/webkit2gtk-4.0:
+    bind: $SNAP/gnome-platform/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/webkit2gtk-4.0
+  /usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/webkit2gtk-4.1:
+    bind: $SNAP/gnome-platform/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/webkit2gtk-4.1
+  /usr/share/xml/iso-codes:
+    bind: $SNAP/gnome-platform/usr/share/xml/iso-codes
+  /usr/share/libdrm:
+    bind: $SNAP/gpu-2404/libdrm
+  /usr/share/drirc.d:
+    symlink: $SNAP/gpu-2404/drirc.d
+  /usr/share/X11/XErrorDB:
+    symlink: $SNAP/gpu-2404/X11/XErrorDB
+
+hooks:
+  configure:
+    command-chain:
+      - snap/command-chain/hooks-configure-fonts
+
+parts:
+  snes9x:
+    plugin: cmake
+    source: https://github.com/snes9xgit/snes9x.git
+    source-tag: $SNAPCRAFT_PROJECT_VERSION
+    source-subdir: gtk
+    cmake-parameters:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_INSTALL_PREFIX=/usr
+      - -DUSE_PULSEAUDIO=ON
+      - -DUSE_SDL2=ON
+      - -DUSE_ALSA=OFF
+      - -DUSE_OSS=OFF
+      - -DUSE_PORTAUDIO=OFF
+    build-packages:
+      - libgtk-3-dev
+      - libpulse-dev
+      - libasound2-dev
+      - libao-dev
+      - libxv-dev
+      - libxi-dev
+      - libpng-dev
+      - libzstd-dev
+      - libsdl2-dev
+      - libgtkmm-3.0-dev
+      - portaudio19-dev
+      - gettext
+    override-build: |
+      craftctl default
+      sed -i 's|Name=Snes9x|Name=Snes9x GTK [NyKyu]|' $CRAFT_PART_INSTALL/usr/share/applications/snes9x-gtk.desktop
+      sed -i 's|Exec=snes9x-gtk %F|Exec=${SNAP}/usr/bin/snes9x-gtk %F|' $CRAFT_PART_INSTALL/usr/share/applications/snes9x-gtk.desktop
+      sed -i 's|Icon=snes9x|Icon=${SNAP}/usr/share/icons/hicolor/scalable/apps/snes9x.svg|' $CRAFT_PART_INSTALL/usr/share/applications/snes9x-gtk.desktop
+
+  dependencies:
+    after: [snes9x]
+    plugin: nil
+    stage-packages:
+      - libsdl2-2.0-0
+      - libdecor-0-0
+      - libgtkmm-3.0-1t64
+      - libxv1
+      - libatkmm-1.6-1v5
+      - libcairomm-1.0-1v5
+      - libgtkmm-3.0-1t64
+      - libglibmm-2.4-1t64
+      - libpangomm-1.4-1v5
+      - libsamplerate0
+    prime:
+      - usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libSDL2-2.0.so*
+      - usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libdecor-0.so*
+      - usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libgtkmm-3.0.so*
+      - usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libXv.so*
+      - usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libatkmm-1.6.so*
+      - usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libcairomm-1.0.so*
+      - usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libgdkmm-3.0.so*
+      - usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libgiomm-2.4.so*
+      - usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libglibmm-2.4.so*
+      - usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libpangomm-1.4.so*
+      - usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/libsamplerate.so*
+
+  command-chain:
+    after: [dependencies]
+    plugin: nil
+    source: ./launcher
+    override-build: |
+      mkdir -p $CRAFT_PART_INSTALL/snap
+      cp -r command-chain $CRAFT_PART_INSTALL/snap/
+      chmod 777 $CRAFT_PART_INSTALL/snap/command-chain/*
