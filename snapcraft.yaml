@@ -15,6 +15,7 @@ description: |
 grade: stable
 confinement: strict
 compression: lzo
+icon: snes9x.svg
 
 apps:
   snes9x-gtk:
@@ -91,7 +92,7 @@ hooks:
       - snap/command-chain/hooks-configure-fonts
 
 parts:
-  snes9x:
+  snes9x-app:
     plugin: cmake
     source: https://github.com/snes9xgit/snes9x.git
     source-tag: $SNAPCRAFT_PROJECT_VERSION
@@ -119,12 +120,10 @@ parts:
       - gettext
     override-build: |
       craftctl default
-      sed -i 's|Name=Snes9x|Name=Snes9x GTK [NyKyu]|' $CRAFT_PART_INSTALL/usr/share/applications/snes9x-gtk.desktop
-      sed -i 's|Exec=snes9x-gtk %F|Exec=${SNAP}/usr/bin/snes9x-gtk %F|' $CRAFT_PART_INSTALL/usr/share/applications/snes9x-gtk.desktop
-      sed -i 's|Icon=snes9x|Icon=${SNAP}/usr/share/icons/hicolor/scalable/apps/snes9x.svg|' $CRAFT_PART_INSTALL/usr/share/applications/snes9x-gtk.desktop
+      sed -i 's|Name=Snes9x|Name=Snes9x GTK [Kyu]|' $CRAFT_PART_INSTALL/usr/share/applications/snes9x-gtk.desktop
 
   dependencies:
-    after: [snes9x]
+    after: [snes9x-app]
     plugin: nil
     stage-packages:
       - libsdl2-2.0-0
@@ -152,9 +151,9 @@ parts:
 
   command-chain:
     after: [dependencies]
-    plugin: nil
-    source: ./launcher
-    override-build: |
-      mkdir -p $CRAFT_PART_INSTALL/snap
-      cp -r command-chain $CRAFT_PART_INSTALL/snap/
-      chmod 777 $CRAFT_PART_INSTALL/snap/command-chain/*
+    plugin: dump
+    source: ./other-files
+    organize:
+      command-chain: snap/command-chain
+    prime:
+      - snap/command-chain
